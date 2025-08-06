@@ -3,4 +3,4 @@
 Made under the supervision of Dr. Hossein Salari
 
 # Requirements
-Made in Python 3. The package **cooler** and its requirements must be installed before use. (check specific dependencies later)
+Made in Python 3. The packages [cooler](https://github.com/open2c/cooler) and [findpeaks](https://github.com/erdogant/findpeaks) and their requirements must be installed before use. (check specific dependencies later)
