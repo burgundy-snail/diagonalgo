@@ -59,10 +59,17 @@ class MyCool(cooler.Cooler):
             print("No valid data found.")
             return pandas.DataFrame()
         
-        '''min_len = min(len(v) for v in data.values())
-        trimmed = {k: v[:min_len] for k, v in data.items()}'''
+        min_len = min(len(v) for v in data.values())
+        # trimmed = {k: v[:min_len] for k, v in data.items()}
 
         # SYMMETRICAL TRIMMING THAT IS ACTUALLY GOOD
+        def trim_centered(lst, target_len):
+            total_trim = len(lst) - target_len
+            start = total_trim // 2
+            end = start + target_len
+            return lst[start:end]
+
+        trimmed = {k: trim_centered(v, min_len) for k, v in data.items()}
 
         df = pandas.DataFrame(trimmed)
         return df
@@ -87,7 +94,7 @@ class MyCool(cooler.Cooler):
         # fix the goddamn get_aligned first bro
         # then think about efficiency, if get_aligned takes too long j first slice for visualization
 
-clr = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000')
+clr = MyCool("C:/Users/hzhan/OneDrive/Documents/Curie_internship/data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000") # /Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000
 
 # original method (manually change d and plot each time)
 '''HiC_map = clr.matrix(balance=False).fetch('1')
@@ -105,7 +112,7 @@ p = HiC_map.diagonal(d)
 plt.plot(p[1000:1200])
 plt.show()'''
 
-clr.graph_diags('1', 1000, 1200, 2, 12) # the above example. not aligned but compare numerical results
+# clr.graph_diags('1', 1000, 1200, 2, 12) # the above example. not aligned but compare numerical results
 
 # these are all from the diagram
 # clr.graph_diags('16', 775, 850, 3, 15, 3)
