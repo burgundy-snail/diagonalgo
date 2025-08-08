@@ -90,11 +90,9 @@ class MyCool(cooler.Cooler):
     def graph_aligned(self, chrom: str, start: int, end: int, min_off: int, max_off: int):
         mat = self.matrix(balance = False).fetch(chrom)
         # just do a get_aligned, then graph a segment of the data?
-        # this depends on how easy the format of the data is to graph...
-        # fix the goddamn get_aligned first bro
-        # then think about efficiency, if get_aligned takes too long j first slice for visualization
+        # think about efficiency, if get_aligned takes too long j first slice for visualization
 
-clr = MyCool("C:/Users/hzhan/OneDrive/Documents/Curie_internship/data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000") # /Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000
+# clr = MyCool("/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000")
 
 # original method (manually change d and plot each time)
 '''HiC_map = clr.matrix(balance=False).fetch('1')
@@ -122,8 +120,8 @@ plt.show()'''
 #mat1 = pandas.DataFrame(clr.get_diags('16', 788, 801, 2, 12, 1))
 #mat1.to_csv("./output/out.tsv", sep = '\t')
 
-mat2 = clr.get_aligned('1', 4, 50)
+'''mat2 = clr.get_aligned('1', 4, 50)
 print(mat2.shape)
 print(mat2.head())
-mat2.to_csv("./output/out_aligned.tsv", sep = '\t')
+mat2.to_csv("./output/out_aligned.tsv", sep = '\t')'''
 
