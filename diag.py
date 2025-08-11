@@ -60,9 +60,8 @@ class MyCool(cooler.Cooler):
             return pandas.DataFrame()
         
         min_len = min(len(v) for v in data.values())
-        # trimmed = {k: v[:min_len] for k, v in data.items()}
 
-        # SYMMETRICAL TRIMMING THAT IS ACTUALLY GOOD
+        # symmetrically trimmed to shortest length
         def trim_centered(lst, target_len):
             total_trim = len(lst) - target_len
             start = total_trim // 2
@@ -71,7 +70,8 @@ class MyCool(cooler.Cooler):
 
         trimmed = {k: trim_centered(v, min_len) for k, v in data.items()}
 
-        df = pandas.DataFrame(trimmed)
+        df = pandas.DataFrame.from_dict(trimmed, orient = "index")
+        df.index.name = "offset"
         return df
 
     # looping version of the original code
@@ -89,8 +89,7 @@ class MyCool(cooler.Cooler):
     
     def graph_aligned(self, chrom: str, start: int, end: int, min_off: int, max_off: int):
         mat = self.matrix(balance = False).fetch(chrom)
-        # just do a get_aligned, then graph a segment of the data?
-        # think about efficiency, if get_aligned takes too long j first slice for visualization
+        # potentially remove; we have a function to graph after finding peaks
 
 # clr = MyCool("/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000")
 
@@ -112,16 +111,8 @@ plt.show()'''
 
 # clr.graph_diags('1', 1000, 1200, 2, 12) # the above example. not aligned but compare numerical results
 
-# these are all from the diagram
+# these are all comparable to diagrams in the paper
 # clr.graph_diags('16', 775, 850, 3, 15, 3)
 # clr.graph_diags('16', 788, 801, 2, 12)
 # clr.graph_diags('20', 172, 183, 2, 10, 1)
-
-#mat1 = pandas.DataFrame(clr.get_diags('16', 788, 801, 2, 12, 1))
-#mat1.to_csv("./output/out.tsv", sep = '\t')
-
-'''mat2 = clr.get_aligned('1', 4, 50)
-print(mat2.shape)
-print(mat2.head())
-mat2.to_csv("./output/out_aligned.tsv", sep = '\t')'''
 
