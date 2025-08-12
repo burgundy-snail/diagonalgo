@@ -41,22 +41,22 @@ class MyCool(cooler.Cooler):
     def get_aligned(self, chrom: str, min_off: int, max_off: int):
         mat = self.matrix(balance = False).fetch(chrom)
         size = mat.shape[0]
+        print(f'Processing contact matrix of shape {mat.shape}')
 
         data = {}
 
         for d in range(min_off, max_off + 1):
-            antidiag = [
-                mat[i, d-i]
-                for i in range(max(0, d - size + 1), min(size, d + 1))
-                if 0 <= d - i < size
-            ]
+            if d < size:
+                antidiag = [mat[i, i + d] for i in range(size - d)]
+            else:
+                antidiag = []
 
-            print(len(antidiag))
+            print(f'd={d}, length={len(antidiag)}')
             if len(antidiag) > 0 and not np.isnan(antidiag).any():
                 data[f'd={d}'] = antidiag
 
         if not data:
-            print("No valid data found.")
+            print('No valid data found.')
             return pandas.DataFrame()
         
         min_len = min(len(v) for v in data.values())
@@ -70,8 +70,8 @@ class MyCool(cooler.Cooler):
 
         trimmed = {k: trim_centered(v, min_len) for k, v in data.items()}
 
-        df = pandas.DataFrame.from_dict(trimmed, orient = "index")
-        df.index.name = "offset"
+        df = pandas.DataFrame.from_dict(trimmed, orient = 'index')
+        df.index.name = 'offset'
         return df
 
     # looping version of the original code
@@ -91,7 +91,7 @@ class MyCool(cooler.Cooler):
         mat = self.matrix(balance = False).fetch(chrom)
         # potentially remove; we have a function to graph after finding peaks
 
-# clr = MyCool("/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000")
+# clr = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000')
 
 # original method (manually change d and plot each time)
 '''HiC_map = clr.matrix(balance=False).fetch('1')
