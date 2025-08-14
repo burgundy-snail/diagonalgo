@@ -8,7 +8,7 @@ from findpeaks import findpeaks
 
 from diag import MyCool
 
-def peakfinder(df: pandas.DataFrame, look: float):
+def peakfinder(df: pandas.DataFrame, look: int):
     fp = findpeaks(method = 'peakdetect', lookahead = look, interpolate = None)
     peaks = []
     signals = {}
@@ -79,20 +79,22 @@ def peak_dotplot(df: pandas.DataFrame):
     plt.title('Peak locations by offset')
     plt.show()
 
-clr = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000') # C:/Users/hzhan/OneDrive/Documents/Curie_internship/data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000
+clr10 = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000') # C:/Users/hzhan/OneDrive/Documents/Curie_internship/data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000
+clr25 = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/25000')
+clr50 = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/50000')
 
-diags = clr.get_aligned('1', 2, 20)
+'''diags = clr.get_aligned('1', 2, 20)
 print(diags.shape)
 print(diags.head())
 # print([len(diags[col]) for col in diags.columns])
 
-'''peaks150, sig150 = peakfinder(diags, 150)
+peaks150, sig150 = peakfinder(diags, 150)
 peak_linegraph(peaks150, sig150, start=1000, end=1200)
 peaks150.to_csv('./output/out_peaks150.tsv', sep = '\t')
 
 peaks100, sig100 = peakfinder(diags, 100)
 peak_linegraph(peaks100, sig100, start=1000, end=1200)
-peaks100.to_csv('./output/out_peaks100.tsv', sep = '\t')'''
+peaks100.to_csv('./output/out_peaks100.tsv', sep = '\t')
 
 peaks50, sig50 = peakfinder(clr.get_aligned('1', 4, 6), 50)
 peak_linegraph(peaks50, sig50, start=1000, end=1200)
@@ -100,7 +102,18 @@ peaks50.to_csv('./output/out_peaks50.tsv', sep = '\t')
 
 peaks25, sig25 = peakfinder(clr.get_aligned('1', 4, 6), 25)
 peak_linegraph(peaks25, sig25, start=1000, end=1200)
-peaks25.to_csv('./output/out_peaks25.tsv', sep = '\t')
+peaks25.to_csv('./output/out_peaks25.tsv', sep = '\t')'''
 
-#TODO: play around with parameters and methods used. See what is best for finding peaks at different scales.
+#TODO: test preprocessing methods (interpolation, denoising, etc) and use of topology method
+chr6_highres = clr10.get_aligned('6', 16, 50)
+chr6 = clr25.get_aligned('6', 8, 26)
+chr6_lowres = clr50.get_aligned('6', 4, 13)
+chr16 = clr10.get_aligned('16', 4, 12)
+
+peaks_16, sig_16 = peakfinder(chr16, 40)
+peak_linegraph(peaks_16, sig_16, start=7750, end=8500)
+peak6, sig6 = peakfinder(chr6, 10)
+peak_linegraph(peak6, sig6, start=1860, end=2020)
+peak6, sig6 = peakfinder(chr6_lowres, 10)
+peak_linegraph(peak6, sig6, start=930, end=1010)
 
