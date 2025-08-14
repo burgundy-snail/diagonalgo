@@ -36,7 +36,6 @@ def peakfinder(df: pandas.DataFrame, look: float):
     print(f'Output dataframe of size: {out_frame.size}')
     
     return out_frame, signals
-# TODO: graphing code that limits range, makes use of signals
 
 def peakgraph(df: pandas.DataFrame, look: float):
     fp = findpeaks(method = 'peakdetect', lookahead = look, interpolate = None)
@@ -47,7 +46,7 @@ def peakgraph(df: pandas.DataFrame, look: float):
         peaks_df = result['df'].loc[result['df']['peak'] == 1, ['x', 'y']]
 
         plt.plot(range(len(sig)), sig, label=f'd={i}')
-        plt.scatter(peaks_df['x'], peaks_df['y'], color='red', s=40, zorder=3)
+        plt.scatter(peaks_df['x'], peaks_df['y'], color='red', s=15, zorder=3)
 
     plt.xlabel('Position along chromosome')
     plt.ylabel('No. of contacts')
@@ -55,7 +54,25 @@ def peakgraph(df: pandas.DataFrame, look: float):
     plt.legend(loc = 'best', fontsize = 'small')
     plt.show()
 
-def dotplot(df: pandas.DataFrame):
+def peak_linegraph(df: pandas.DataFrame, signals: dict, *, start: int, end: int):
+    for d, sig in signals.items():
+        sig_x = np.arange(start, min(end, len(sig)))
+        sig_y = np.array(sig)[start:min(end, len(sig))]
+        plt.plot(sig_x, sig_y, label=d) #may have to change label
+        
+        peaks_df = df[df['diagonal'] == d]
+        peaks_in_range = peaks_df[(peaks_df['peak_x'] >= start) & (peaks_df['peak_x'] < end)]
+
+        if not peaks_in_range.empty:
+            plt.scatter(peaks_in_range['peak_x'], peaks_in_range['peak_y'], color='red', s=15, zorder=3)
+    
+    plt.xlabel('Position along chromosome')
+    plt.ylabel('No. of contacts')
+    plt.title(f'Diagonals with peaks {start}-{end}')
+    plt.legend(loc = 'best', fontsize = 'small')
+    plt.show()
+
+def peak_dotplot(df: pandas.DataFrame):
     plt.scatter(df[:0], df[:1])
     plt.xlabel('Position along chromosome')
     plt.ylabel('Offset')
@@ -69,11 +86,21 @@ print(diags.shape)
 print(diags.head())
 # print([len(diags[col]) for col in diags.columns])
 
-peaks150, sig150 = peakfinder(diags, 150)
-peakgraph(diags, 150)
+'''peaks150, sig150 = peakfinder(diags, 150)
+peak_linegraph(peaks150, sig150, start=1000, end=1200)
 peaks150.to_csv('./output/out_peaks150.tsv', sep = '\t')
 
 peaks100, sig100 = peakfinder(diags, 100)
-peakgraph(diags, 100)
-peaks100.to_csv('./output/out_peaks100.tsv', sep = '\t')
+peak_linegraph(peaks100, sig100, start=1000, end=1200)
+peaks100.to_csv('./output/out_peaks100.tsv', sep = '\t')'''
+
+peaks50, sig50 = peakfinder(clr.get_aligned('1', 4, 6), 50)
+peak_linegraph(peaks50, sig50, start=1000, end=1200)
+peaks50.to_csv('./output/out_peaks50.tsv', sep = '\t')
+
+peaks25, sig25 = peakfinder(clr.get_aligned('1', 4, 6), 25)
+peak_linegraph(peaks25, sig25, start=1000, end=1200)
+peaks25.to_csv('./output/out_peaks25.tsv', sep = '\t')
+
+#TODO: play around with parameters and methods used. See what is best for finding peaks at different scales.
 

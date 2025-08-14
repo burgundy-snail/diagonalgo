@@ -45,7 +45,7 @@ class MyCool(cooler.Cooler):
 
         data = {}
 
-        for d in range(min_off, max_off + 1):
+        for d in range(min_off, max_off + 1, 2): # switch back to only even offsets for now, deal with odd later
             if d < size:
                 antidiag = [mat[i, i + d] for i in range(size - d)]
             else:
