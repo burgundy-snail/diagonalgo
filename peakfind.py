@@ -8,7 +8,35 @@ from findpeaks import findpeaks
 
 from diag import MyCool
 
+def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarray:
+    """Optional preprocessing of 1D signal."""
+    if method is None:
+        return sig
+    elif method == "savgol":
+        # kwargs: window_length, polyorder
+        return savgol_filter(sig, **kwargs)
+    elif method == "gaussian":
+        # kwargs: window, std
+        window = gaussian(kwargs.get("window", 11), kwargs.get("std", 2))
+        return convolve(sig, window / window.sum(), mode="same")
+    else:
+        raise ValueError(f"Unknown denoise method: {method}")
+
 def peakfinder(df: pandas.DataFrame, look: int):
+    """Extracts rows of data (diagonals in the original contact matrix) and finds peaks using the methods in findpeaks package.
+    
+    Parameters
+    ----------
+    df: DataFrame, generated from diag.get_aligned
+    look: int, the lookahead value to use when using peakdetect.
+    interpolate: default None
+
+    Returns
+    -------
+    out_frame: DataFrame listing coordinates of detected peaks
+    signals: dictionary storing read diagonals for reference
+    """
+    # TODO: allow preprocessing and different detection methods
     fp = findpeaks(method = 'peakdetect', lookahead = look, interpolate = None)
     peaks = []
     signals = {}
@@ -83,33 +111,13 @@ clr10 = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::res
 clr25 = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/25000')
 clr50 = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/50000')
 
-'''diags = clr.get_aligned('1', 2, 20)
-print(diags.shape)
-print(diags.head())
-# print([len(diags[col]) for col in diags.columns])
-
-peaks150, sig150 = peakfinder(diags, 150)
-peak_linegraph(peaks150, sig150, start=1000, end=1200)
-peaks150.to_csv('./output/out_peaks150.tsv', sep = '\t')
-
-peaks100, sig100 = peakfinder(diags, 100)
-peak_linegraph(peaks100, sig100, start=1000, end=1200)
-peaks100.to_csv('./output/out_peaks100.tsv', sep = '\t')
-
-peaks50, sig50 = peakfinder(clr.get_aligned('1', 4, 6), 50)
-peak_linegraph(peaks50, sig50, start=1000, end=1200)
-peaks50.to_csv('./output/out_peaks50.tsv', sep = '\t')
-
-peaks25, sig25 = peakfinder(clr.get_aligned('1', 4, 6), 25)
-peak_linegraph(peaks25, sig25, start=1000, end=1200)
-peaks25.to_csv('./output/out_peaks25.tsv', sep = '\t')'''
-
 #TODO: test preprocessing methods (interpolation, denoising, etc) and use of topology method
 chr6_highres = clr10.get_aligned('6', 16, 50)
 chr6 = clr25.get_aligned('6', 8, 26)
 chr6_lowres = clr50.get_aligned('6', 4, 13)
 chr16 = clr10.get_aligned('16', 4, 12)
 
+# selecting same areas as figures shown in Liu et al., 2024 to compare detection
 peaks_16, sig_16 = peakfinder(chr16, 40)
 peak_linegraph(peaks_16, sig_16, start=7750, end=8500)
 peak6, sig6 = peakfinder(chr6, 10)
