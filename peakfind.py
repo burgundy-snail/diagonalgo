@@ -22,31 +22,48 @@ def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarr
     else:
         raise ValueError(f"Unknown denoise method: {method}")
 
-def peakfinder(df: pandas.DataFrame, look: int):
-    """Extracts rows of data (diagonals in the original contact matrix) and finds peaks using the methods in findpeaks package.
+def peakfinder(df: pandas.DataFrame, method: str = 'peakdetect', **kwargs):
+    """Extracts rows of data (diagonals in the original contact matrix) and finds peaks in each row using the methods in findpeaks package.
     
     Parameters
     ----------
-    df: DataFrame, generated from diag.get_aligned
-    look: int, the lookahead value to use when using peakdetect.
-    interpolate: default None
+    df: DataFrame, expects format generated from diag.get_aligned]
+    method: str, optional.
+        Determines findpeaks method:
+        - 'peakdetect': simple method for detecting peaks one scale at a time.
+        - 'topology': method using persistent homology to find most significant peaks.
+        - 'caerus': takes longer, looks across multiple scales.
+
+    **kwargs: arguments passed to findpeaks depending on method
+    - lookahead: int, determines scale of peaks found with peakdetect.
+    - interpolate: str, applies interpolation/smoothing to valid methods.
 
     Returns
     -------
     out_frame: DataFrame listing coordinates of detected peaks
-    signals: dictionary storing read diagonals for reference
+    signals: dictionary storing HiC diagonals for reference
     """
-    # TODO: allow preprocessing and different detection methods
-    fp = findpeaks(method = 'peakdetect', lookahead = look, interpolate = None)
+    # TODO: allow preprocessing
+    fp = findpeaks(method=method, **kwargs)
     peaks = []
     signals = {}
     
     for d, row in df.iterrows():
         sig = np.array(row, dtype = float)
 
-        if len(sig) < (2 * look + 1):
-            print(f'Not enough points for lookahead {look}, row skipped.')
-            continue
+        if method == 'peakdetect':
+            look = kwargs.get('lookahead', None)
+            if look is None:
+                raise ValueError("Method 'peakdetect' requires 'lookahead' argument.")
+            if len(sig) < (2 * look + 1):
+                print(f'Diagonal {d} skipped: not enough points for lookahead {look}.')
+                continue
+        elif method == 'topology':
+            if len(sig) < 5:
+                print(f'Diagonal {d} skipped: {len(sig)} is not enough points for topology.')
+        elif method == 'caerus':
+            if len(sig) < 5:
+                print(f'Diagonal {d} skipped: {len(sig)} is not enough points for caerus.')
 
         result = fp.fit(sig)
         signals[d] = sig
