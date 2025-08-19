@@ -3,12 +3,32 @@ import numpy as np
 import pandas
 import matplotlib.pyplot as plt
 
-class MyCool(cooler.Cooler):
-    def __init__(self, uri): # created the same way as a normal cooler
+class DiagCool(cooler.Cooler):
+    """Wrapper for 'cooler' library with custom utilities for working with Hi-C contact matrices.
+
+    Internally holds a 'cooler.Cooler' object and provides methods for analysis of diagonals. Made for the 'diagonalgo' tool for identification of chromatin fountains and other structures.
+
+    Attributes
+    ----------
+    cooler: cooler.Cooler - the underlying cooler object. Can be accessed directly if needed.
+
+    Methods
+    -------
+    matrix(balance=False): access the raw contact matrix.
+    fetch(chrom): fetch a chromosome-specific submatrix.
+    get_diags(chrom, start, end, min_off, max_off): returns a list of the raw diagonals for a specified range of indices and offsets.
+    get_aligned(chrom, min_off, max_off): returns the diagonals of an intrachromosomal contact matrix for a specified range of offsets, symmetrically trimmed to the shortest diagonal to mantain alignment.
+    graph_diags(chrom, start, end, min_off, max_off): reads raw diagonals and graphs the signals.
+    graph_aligned(chrom, start, end, min_off, max_off): incomplete. Meant to replace graph_diags for aligned and trimmed diagonals.
+    """
+    def __init__(self, uri):
+        """Calls the cooler.Cooler init."""
         super().__init__(uri)
     
-    # need some way to align diags for both of these methods
-
+    def cooler(self):
+        """Return underlying cooler object."""
+        return self._cool
+    
     def get_diags(self, chrom: str, start: int, end: int, min_off: int, max_off: int):
         mat = self.matrix(balance = False).fetch(chrom)
         data = []
@@ -89,25 +109,9 @@ class MyCool(cooler.Cooler):
     
     def graph_aligned(self, chrom: str, start: int, end: int, min_off: int, max_off: int):
         mat = self.matrix(balance = False).fetch(chrom)
-        # potentially remove; we have a function to graph after finding peaks
+        # intended to graph output of get_aligned before processing
 
-# clr = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000')
-
-# original method (manually change d and plot each time)
-'''HiC_map = clr.matrix(balance=False).fetch('1')
-d = 2
-p = HiC_map.diagonal(d)
-plt.plot(p[1000:1200])
-d = 4
-p = HiC_map.diagonal(d)
-plt.plot(p[1000:1200])
-d = 6
-p = HiC_map.diagonal(d)
-plt.plot(p[1000:1200])
-d = 8
-p = HiC_map.diagonal(d)
-plt.plot(p[1000:1200])
-plt.show()'''
+# clr = DiagCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000')
 
 # clr.graph_diags('1', 1000, 1200, 2, 12) # the above example. not aligned but compare numerical results
 

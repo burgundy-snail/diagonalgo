@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from findpeaks import findpeaks
 
-from diag import MyCool
+from diag import DiagCool
 
 def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarray:
     """Optional preprocessing of 1D signal."""
@@ -14,13 +14,13 @@ def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarr
         return sig
     elif method == "savgol":
         # kwargs: window_length, polyorder
-        return savgol_filter(sig, **kwargs)
+        return findpeaks.savgol_filter(sig, **kwargs)
     elif method == "gaussian":
         # kwargs: window, std
-        window = gaussian(kwargs.get("window", 11), kwargs.get("std", 2))
-        return convolve(sig, window / window.sum(), mode="same")
+        window = findpeaks.gaussian(kwargs.get("window", 11), kwargs.get("std", 2))
+        return findpeaks.convolve(sig, window / window.sum(), mode="same")
     else:
-        raise ValueError(f"Unknown denoise method: {method}")
+        raise ValueError(f"Unknown method: {method} is not a valid method for 1D denoising.")
 
 def peakfinder(df: pandas.DataFrame, method: str = 'peakdetect', **kwargs):
     """Extracts rows of data (diagonals in the original contact matrix) and finds peaks in each row using the methods in findpeaks package.
@@ -82,22 +82,6 @@ def peakfinder(df: pandas.DataFrame, method: str = 'peakdetect', **kwargs):
     
     return out_frame, signals
 
-def peakgraph(df: pandas.DataFrame, look: float):
-    fp = findpeaks(method = 'peakdetect', lookahead = look, interpolate = None)
-    
-    for i, row in df.iterrows():
-        sig = np.array(row[1:], dtype = float)
-        result = fp.fit(sig)
-        peaks_df = result['df'].loc[result['df']['peak'] == 1, ['x', 'y']]
-
-        plt.plot(range(len(sig)), sig, label=f'd={i}')
-        plt.scatter(peaks_df['x'], peaks_df['y'], color='red', s=15, zorder=3)
-
-    plt.xlabel('Position along chromosome')
-    plt.ylabel('No. of contacts')
-    plt.title('All diagonals with peaks')
-    plt.legend(loc = 'best', fontsize = 'small')
-    plt.show()
 
 def peak_linegraph(df: pandas.DataFrame, signals: dict, *, start: int, end: int):
     for d, sig in signals.items():
@@ -124,21 +108,24 @@ def peak_dotplot(df: pandas.DataFrame):
     plt.title('Peak locations by offset')
     plt.show()
 
-clr10 = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000') # C:/Users/hzhan/OneDrive/Documents/Curie_internship/data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000
-clr25 = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/25000')
-clr50 = MyCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/50000')
+clr10 = DiagCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000') # C:/Users/hzhan/OneDrive/Documents/Curie_internship/data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000
+clr25 = DiagCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/25000')
+clr50 = DiagCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/50000')
 
-#TODO: test preprocessing methods (interpolation, denoising, etc) and use of topology method
+#TODO: test preprocessing methods (interpolation, denoising, etc) and use of topology + caerus methods, generate dotplots
 chr6_highres = clr10.get_aligned('6', 16, 50)
 chr6 = clr25.get_aligned('6', 8, 26)
 chr6_lowres = clr50.get_aligned('6', 4, 13)
 chr16 = clr10.get_aligned('16', 4, 12)
+chry = clr50.get_aligned('Y', 6, )
 
 # selecting same areas as figures shown in Liu et al., 2024 to compare detection
-peaks_16, sig_16 = peakfinder(chr16, 40)
-peak_linegraph(peaks_16, sig_16, start=7750, end=8500)
-peak6, sig6 = peakfinder(chr6, 10)
-peak_linegraph(peak6, sig6, start=1860, end=2020)
-peak6, sig6 = peakfinder(chr6_lowres, 10)
-peak_linegraph(peak6, sig6, start=930, end=1010)
+peaks_16c, sig_16c = peakfinder(chr16, 'caerus')
+peak_linegraph(peaks_16c, sig_16c, start=7750, end=8500)
+peaks_16c.to_csv('/output/chr16_caerus.tsv', sep='\t')
+peak6c, sig6c = peakfinder(chr6, 'caerus')
+peak_linegraph(peak6c, sig6c, start=1860, end=2020)
+peak6c.to_csv('/output/chr6_caerus.tsv', sep='\t')
+#peak6, sig6 = peakfinder(chr6_lowres, 10)
+#peak_linegraph(peak6, sig6, start=930, end=1010)
 
