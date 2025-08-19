@@ -111,12 +111,3 @@ class DiagCool(cooler.Cooler):
         mat = self.matrix(balance = False).fetch(chrom)
         # intended to graph output of get_aligned before processing
 
-# clr = DiagCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000')
-
-# clr.graph_diags('1', 1000, 1200, 2, 12) # the above example. not aligned but compare numerical results
-
-# these are all comparable to diagrams in the paper
-# clr.graph_diags('16', 775, 850, 3, 15, 3)
-# clr.graph_diags('16', 788, 801, 2, 12)
-# clr.graph_diags('20', 172, 183, 2, 10, 1)
-
