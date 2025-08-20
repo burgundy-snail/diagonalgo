@@ -25,20 +25,20 @@ clr50 = DiagCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::r
 #TODO: test preprocessing methods (interpolation, denoising, etc) and use of topology + caerus methods, generate dotplots
 chr6_highres = clr10.get_aligned('6', 16, 50)
 chr6 = clr25.get_aligned('6', 8, 26)
-chr6_lowres = clr50.get_aligned('6', 4, 13)
+#chr6_lowres = clr50.get_aligned('6', 4, 13)
 chr16 = clr10.get_aligned('16', 4, 12)
-chry = clr50.get_aligned('Y', 300, 1000)
+#chry = clr50.get_aligned('Y', 1000, 1400) #small dimensions for testing errors
 
 # selecting same areas as figures shown in Liu et al., 2024 to compare detection
 # these do take a while to run, TODO figure out if process can be streamlined
-# peaks_16c, sig_16c = peakfinder(chr16, 'caerus')
-# peak_linegraph(peaks_16c, sig_16c, start=7750, end=8500)
-# peaks_16c.to_csv('./output/chr16_caerus.tsv', sep='\t')
-# peak6c, sig6c = peakfinder(chr6, 'caerus')
-# peak_linegraph(peak6c, sig6c, start=1860, end=2020)
-# peak6c.to_csv('./output/chr6_caerus.tsv', sep='\t')
+peaks_16c, sig_16c = peakfinder(chr16, interpolate=50, lookahead=100)
+peak_linegraph(peaks_16c, sig_16c, start=7750, end=8500)
+peaks_16c.to_csv('./output/chr16_pd_intpol50.tsv', sep='\t')
+peak6c, sig6c = peakfinder(chr6, interpolate=50, lookahead=100)
+peak_linegraph(peak6c, sig6c, start=1860, end=2020)
+peak6c.to_csv('./output/chr6_pd_intpol50.tsv', sep='\t')
 #peak6, sig6 = peakfinder(chr6_lowres, 10)
 #peak_linegraph(peak6, sig6, start=930, end=1010)
-peaks_y, sig_y = peakfinder(chry, 'topology')
-peak_linegraph(peaks_y, sig_y, start=930, end=1010)
-peaks_y.to_csv('./output/chry_topology.tsv', sep='\t')
+# peaks_y, sig_y = peakfinder(chry, 'caerus')
+# peak_linegraph(peaks_y, sig_y, start=930, end=1010)
+# peaks_y.to_csv('./output/chry_caerus.tsv', sep='\t')

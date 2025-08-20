@@ -22,12 +22,15 @@ def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarr
     else:
         raise ValueError(f"Unknown method: {method} is not a valid method for 1D denoising.")
 
-def peakfinder(df: pandas.DataFrame, method: str = 'peakdetect', **kwargs):
+def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str = None, **kwargs):
     """Extracts rows of data (diagonals in the original contact matrix) and finds peaks in each row using the methods in findpeaks package.
     
     Parameters
     ----------
-    df: DataFrame, expects format generated from diag.get_aligned]
+    
+    df: DataFrame
+        Expects format generated from diag.get_aligned.
+
     method: str, optional.
         Determines findpeaks method:
         - 'peakdetect': simple method for detecting peaks one scale at a time.
@@ -35,21 +38,26 @@ def peakfinder(df: pandas.DataFrame, method: str = 'peakdetect', **kwargs):
         - 'caerus': takes longer, looks across multiple scales.
 
     **kwargs: arguments passed to findpeaks depending on method
-    - lookahead: int, determines scale of peaks found with peakdetect.
-    - interpolate: str, applies interpolation/smoothing to valid methods.
+        - lookahead: int, determines scale of peaks found with peakdetect.
+        - interpolate: str, applies interpolation/smoothing to valid methods.
+        - additional arguments passed to preprocess_signal
 
     Returns
     -------
-    out_frame: DataFrame listing coordinates of detected peaks
-    signals: dictionary storing HiC diagonals for reference
+    out_frame: DataFrame
+        Lists coordinates of detected peaks
+    signals: dict
+        stores HiC diagonals for reference, with preprocessing if included
     """
-    # TODO: allow preprocessing
+    # TODO: debug and STANDARDIZE OUTPUT
     fp = findpeaks(method=method, **kwargs)
     peaks = []
     signals = {}
     
     for d, row in df.iterrows():
         sig = np.array(row, dtype = float)
+
+        sig = preprocess_signal(sig, method=denoise, **kwargs)
 
         if method == 'peakdetect':
             look = kwargs.get('lookahead', None)
