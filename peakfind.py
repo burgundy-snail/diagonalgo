@@ -3,7 +3,7 @@ import numpy as np
 import pandas
 import matplotlib.pyplot as plt
 
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks # potentially incorporate this method as well although it is a little more difficult to work with
 from findpeaks import findpeaks
 
 from diag import DiagCool
@@ -22,7 +22,7 @@ def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarr
     else:
         raise ValueError(f"Unknown method: {method} is not a valid method for 1D denoising.")
 
-def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str = None, **kwargs):
+def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str = None, denoise_kwargs: dict = None, **kwargs):
     """Extracts rows of data (diagonals in the original contact matrix) and finds peaks in each row using the methods in findpeaks package.
     
     Parameters
@@ -31,16 +31,24 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
     df: DataFrame
         Expects format generated from diag.get_aligned.
 
-    method: str, optional.
+    method: str, optional
         Determines findpeaks method:
         - 'peakdetect': simple method for detecting peaks one scale at a time.
         - 'topology': method using persistent homology to find most significant peaks.
         - 'caerus': takes longer, looks across multiple scales.
+    
+    denoise: str, optional
+        Preprocessing method for signals ("savgol", "gaussian", or None).
+        
+    denoise_kwargs: dict, optional
+        Arguments for the preprocessing method.
+        - savgol: window_length, polyorder
+        - gaussian: window, std
 
-    **kwargs: arguments passed to findpeaks depending on method
+    **kwargs: optional
+        Arguments passed to findpeaks depending on method:
         - lookahead: int, determines scale of peaks found with peakdetect.
         - interpolate: str, applies interpolation/smoothing to valid methods.
-        - additional arguments passed to preprocess_signal
 
     Returns
     -------
@@ -50,7 +58,7 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
         stores HiC diagonals for reference, with preprocessing if included
     """
     # TODO: debug and STANDARDIZE OUTPUT
-    fp = findpeaks(method=method, **kwargs)
+    fp = findpeaks(method=method, **(denoise_kwargs or {}))
     peaks = []
     signals = {}
     
@@ -66,24 +74,32 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
             if len(sig) < (2 * look + 1):
                 print(f'Diagonal {d} skipped: not enough points for lookahead {look}.')
                 continue
-        elif method == 'topology':
+        elif method in {'topology', 'caerus'}:
             if len(sig) < 5:
-                print(f'Diagonal {d} skipped: {len(sig)} is not enough points for topology.')
-        elif method == 'caerus':
-            if len(sig) < 5:
-                print(f'Diagonal {d} skipped: {len(sig)} is not enough points for caerus.')
+                print(f'Diagonal {d} skipped: {len(sig)} is not enough points for {method}.')
 
         result = fp.fit(sig)
         signals[d] = sig
 
-        peaks_df = result['df'].loc[result['df']['peak'] == 1, ['x', 'y']] # just stores the coordinates of peaks.
+        print(result['df'].head())
+
+        peaks_df = result['df'].loc[result['df']['peak'] == 1, ['x', 'y']]
+
+        if kwargs.get('interpolate'):
+            factor = kwargs['interpolate']
+            peaks_df['peak_x_interp'] = peaks_df['x'] # true interpolated coordinate
+            peaks_df['peak_x'] = peaks_df['x'] / factor # map back to original scale, but keep float
+        else:
+            peaks_df['peak_x'] = peaks_df['x']
 
         for _, peak in peaks_df.iterrows():
             peaks.append({
-                'diagonal': d,
+                'diagonal': int(str(d).replace("d=", "")),
                 'peak_x': int(peak['x']),
                 'peak_y': float(peak['y'])
             })
+        
+        print(f"Diagonal {d}: {len(peaks_df)} peaks found (signal length of {len(sig)})")
     
     out_frame = pandas.DataFrame(peaks)
     print(f'Output dataframe of size: {out_frame.size}')
@@ -110,7 +126,10 @@ def peak_linegraph(df: pandas.DataFrame, signals: dict, *, start: int, end: int)
     plt.show()
 
 def peak_dotplot(df: pandas.DataFrame):
-    plt.scatter(df[:0], df[:1])
+    """Simple function to create a dotplot of peaks by position versus offset"""
+    #df['diagonal'] = df['diagonal'].str.replace("d=", "").astype(int)
+
+    plt.scatter(df['peak_x'], df['diagonal'])
     plt.xlabel('Position along chromosome')
     plt.ylabel('Offset')
     plt.title('Peak locations by offset')

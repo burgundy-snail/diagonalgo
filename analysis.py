@@ -1,13 +1,5 @@
-import cooler
-import numpy as np
-import pandas
-import matplotlib.pyplot as plt
-
-from scipy.signal import find_peaks
-from findpeaks import findpeaks
-
 from diag import DiagCool
-from peakfind import peakfinder, peak_linegraph
+import peakfind as pf
 
 # clr = DiagCool('/Users/hzhang/repli-HiC_data/Repli-HiC_K562_WT_totalS.mcool::resolutions/10000')
 
@@ -31,12 +23,14 @@ chr16 = clr10.get_aligned('16', 4, 12)
 
 # selecting same areas as figures shown in Liu et al., 2024 to compare detection
 # these do take a while to run, TODO figure out if process can be streamlined
-peaks_16c, sig_16c = peakfinder(chr16, interpolate=50, lookahead=100)
-peak_linegraph(peaks_16c, sig_16c, start=7750, end=8500)
-peaks_16c.to_csv('./output/chr16_pd_intpol50.tsv', sep='\t')
-peak6c, sig6c = peakfinder(chr6, interpolate=50, lookahead=100)
-peak_linegraph(peak6c, sig6c, start=1860, end=2020)
-peak6c.to_csv('./output/chr6_pd_intpol50.tsv', sep='\t')
+peaks_16c, sig_16c = pf.peakfinder(chr16, method='peakdetect', interpolate=10, lookahead=30, threshold=None)
+pf.peak_linegraph(peaks_16c, sig_16c, start=7750, end=8500)
+pf.peak_dotplot(peaks_16c)
+peaks_16c.to_csv('./output/chr16_pd_intpol10look30.tsv', sep='\t')
+peak6c, sig6c = pf.peakfinder(chr6, method='peakdetect', interpolate=10, lookahead=30, threshold=None)
+pf.peak_linegraph(peak6c, sig6c, start=1860, end=2020)
+pf.peak_dotplot(peaks_16c)
+peak6c.to_csv('./output/chr6_pd_intpol10look30.tsv', sep='\t')
 #peak6, sig6 = peakfinder(chr6_lowres, 10)
 #peak_linegraph(peak6, sig6, start=930, end=1010)
 # peaks_y, sig_y = peakfinder(chry, 'caerus')

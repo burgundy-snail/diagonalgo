@@ -14,12 +14,18 @@ class DiagCool(cooler.Cooler):
 
     Methods
     -------
-    matrix(balance=False): access the raw contact matrix.
-    fetch(chrom): fetch a chromosome-specific submatrix.
-    get_diags(chrom, start, end, min_off, max_off): returns a list of the raw diagonals for a specified range of indices and offsets.
-    get_aligned(chrom, min_off, max_off): returns the diagonals of an intrachromosomal contact matrix for a specified range of offsets, symmetrically trimmed to the shortest diagonal to mantain alignment.
-    graph_diags(chrom, start, end, min_off, max_off): reads raw diagonals and graphs the signals.
-    graph_aligned(chrom, start, end, min_off, max_off): incomplete. Meant to replace graph_diags for aligned and trimmed diagonals.
+    matrix(balance=False):
+        access the raw contact matrix.
+    fetch(chrom):
+        fetch a chromosome-specific submatrix.
+    get_diags(chrom, start, end, min_off, max_off):
+        returns a list of the raw diagonals for a specified range of indices and offsets.
+    get_aligned(chrom, min_off, max_off):
+        returns the diagonals of an intrachromosomal contact matrix for a specified range of offsets, symmetrically trimmed to the shortest diagonal to mantain alignment.
+    graph_diags(chrom, start, end, min_off, max_off):
+        reads raw diagonals and graphs the signals.
+    graph_aligned(chrom, start, end, min_off, max_off):
+        incomplete. Meant to replace graph_diags for aligned and trimmed diagonals.
     """
     def __init__(self, uri):
         """Calls the cooler.Cooler init."""
