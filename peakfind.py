@@ -8,6 +8,21 @@ from findpeaks import findpeaks
 
 from diag import DiagCool
 
+def debug_pd(sig, diagonal, lookahead=50, **kwargs):
+    print(f"\n=== Debugging diagonal d={diagonal} ===")
+    print(f"Signal length: {len(sig)}, min={sig.min()}, max={sig.max()}")
+
+    # Run raw SciPy
+    peaks, props = find_peaks(sig, distance=lookahead)
+    print(f"SciPy returned {len(peaks)} raw peaks")
+
+    # Peek at first few peaks
+    if len(peaks) > 0:
+        print("First peaks (x,y):", [(int(p), float(sig[p])) for p in peaks[:5]])
+
+    # If your wrapper does more filtering, check before/after
+    return peaks, props
+
 def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarray:
     """Optional preprocessing of 1D signal."""
     if method is None:
@@ -21,6 +36,22 @@ def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarr
         return findpeaks.convolve(sig, window / window.sum(), mode="same")
     else:
         raise ValueError(f"Unknown method: {method} is not a valid method for 1D denoising.")
+
+def assign_segments_hybrid(n, valley_idx=None, res_bp=10_000, fallback_span=500_000):
+    labels = np.zeros(n, dtype=int)
+    if valley_idx is not None and len(valley_idx) > 0:
+        cuts = np.sort(np.asarray(valley_idx, dtype=int))
+        labels[:] = 1
+        for i, c in enumerate(cuts, start=1):
+            labels[c:] = i + 1
+    else:
+        bin_size_bins = max(1, int(round(fallback_span / res_bp)))
+        n_bins = int(np.ceil(n / bin_size_bins))
+        for b in range(n_bins):
+            start = b * bin_size_bins
+            end = min((b + 1) * bin_size_bins, n)
+            labels[start:end] = b + 1
+    return labels
 
 def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str = None, denoise_kwargs: dict = None, **kwargs):
     """Extracts rows of data (diagonals in the original contact matrix) and finds peaks in each row using the methods in findpeaks package.
@@ -57,15 +88,30 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
     signals: dict
         stores HiC diagonals for reference, with preprocessing if included
     """
-    # TODO: debug and STANDARDIZE OUTPUT
+    # TODO: make sure OUTPUT STANDARDIZED
+
+    # kwargs reserved keys
+    fallback_span = kwargs.get('fallback_span_bp', 500_000)
+    res_bp = kwargs.get('resolution_bp', 10_000)
+
     fp = findpeaks(method=method, **(denoise_kwargs or {}))
     peaks = []
     signals = {}
     
     for d, row in df.iterrows():
         sig = np.array(row, dtype = float)
+        # peaks_idx, props = debug_pd(sig, diagonal=d, lookahead=50)
 
         sig = preprocess_signal(sig, method=denoise, **kwargs)
+
+        # for catching lack of valleys
+        valley_idx, _ = find_peaks(-sig)
+        labx = assign_segments_hybrid(
+        n=len(sig),
+        valley_idx=valley_idx if len(valley_idx) > 0 else None,
+        res_bp=kwargs.get('res_bp', 10_000),
+        fallback_span=kwargs.get('fallback_span', 500_000)
+        )
 
         if method == 'peakdetect':
             look = kwargs.get('lookahead', None)
@@ -84,6 +130,7 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
         print(result['df'].head())
 
         peaks_df = result['df'].loc[result['df']['peak'] == 1, ['x', 'y']]
+        peaks_df['labx'] = labx[peaks_df['x'].values]
 
         if kwargs.get('interpolate'):
             factor = kwargs['interpolate']
@@ -96,7 +143,8 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
             peaks.append({
                 'diagonal': int(str(d).replace("d=", "")),
                 'peak_x': int(peak['x']),
-                'peak_y': float(peak['y'])
+                'peak_y': float(peak['y']),
+                'labx': int(peak['labx'])
             })
         
         print(f"Diagonal {d}: {len(peaks_df)} peaks found (signal length of {len(sig)})")

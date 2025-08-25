@@ -23,11 +23,11 @@ chr16 = clr10.get_aligned('16', 4, 12)
 
 # selecting same areas as figures shown in Liu et al., 2024 to compare detection
 # these do take a while to run, TODO figure out if process can be streamlined
-peaks_16c, sig_16c = pf.peakfinder(chr16, method='peakdetect', interpolate=10, lookahead=30, threshold=None)
+peaks_16c, sig_16c = pf.peakfinder(chr16, method='peakdetect', interpolate=10, lookahead=30, res_bp=10000, fallback_span=500000)
 pf.peak_linegraph(peaks_16c, sig_16c, start=7750, end=8500)
 pf.peak_dotplot(peaks_16c)
 peaks_16c.to_csv('./output/chr16_pd_intpol10look30.tsv', sep='\t')
-peak6c, sig6c = pf.peakfinder(chr6, method='peakdetect', interpolate=10, lookahead=30, threshold=None)
+peak6c, sig6c = pf.peakfinder(chr6, method='peakdetect', interpolate=10, lookahead=30, res_bp=10000, fallback_span=500000)
 pf.peak_linegraph(peak6c, sig6c, start=1860, end=2020)
 pf.peak_dotplot(peaks_16c)
 peak6c.to_csv('./output/chr6_pd_intpol10look30.tsv', sep='\t')
