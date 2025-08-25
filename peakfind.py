@@ -37,7 +37,7 @@ def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarr
     else:
         raise ValueError(f"Unknown method: {method} is not a valid method for 1D denoising.")
 
-def assign_segments_hybrid(n, valley_idx=None, res_bp=10_000, fallback_span=500_000):
+def assign_segments_hybrid(n, valley_idx=None, res_bp=10_000, fallback_span_bp=500_000):
     labels = np.zeros(n, dtype=int)
     if valley_idx is not None and len(valley_idx) > 0:
         cuts = np.sort(np.asarray(valley_idx, dtype=int))
@@ -45,7 +45,7 @@ def assign_segments_hybrid(n, valley_idx=None, res_bp=10_000, fallback_span=500_
         for i, c in enumerate(cuts, start=1):
             labels[c:] = i + 1
     else:
-        bin_size_bins = max(1, int(round(fallback_span / res_bp)))
+        bin_size_bins = max(1, int(round(fallback_span_bp / res_bp)))
         n_bins = int(np.ceil(n / bin_size_bins))
         for b in range(n_bins):
             start = b * bin_size_bins
@@ -91,8 +91,8 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
     # TODO: make sure OUTPUT STANDARDIZED
 
     # kwargs reserved keys
-    fallback_span = kwargs.get('fallback_span_bp', 500_000)
-    res_bp = kwargs.get('resolution_bp', 10_000)
+    fallback_span_bp = kwargs.get('fallback_span_bp', 500_000)
+    res_bp = kwargs.get('res_bp', 10_000)
 
     fp = findpeaks(method=method, **(denoise_kwargs or {}))
     peaks = []
@@ -110,7 +110,7 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
         n=len(sig),
         valley_idx=valley_idx if len(valley_idx) > 0 else None,
         res_bp=kwargs.get('res_bp', 10_000),
-        fallback_span=kwargs.get('fallback_span', 500_000)
+        fallback_span_bp=kwargs.get('fallback_span_bp', 500_000)
         )
 
         if method == 'peakdetect':
@@ -130,7 +130,7 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
         print(result['df'].head())
 
         peaks_df = result['df'].loc[result['df']['peak'] == 1, ['x', 'y']]
-        peaks_df['labx'] = labx[peaks_df['x'].values]
+        peaks_df['labx'] = labx[peaks_df['x'].astype(int).values]
 
         if kwargs.get('interpolate'):
             factor = kwargs['interpolate']
