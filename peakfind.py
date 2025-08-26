@@ -3,7 +3,8 @@ import numpy as np
 import pandas
 import matplotlib.pyplot as plt
 
-from scipy.signal import find_peaks # potentially incorporate this method as well although it is a little more difficult to work with
+from scipy.signal import find_peaks, savgol_filter, convolve
+from scipy.ndimage import gaussian_filter1d as gaussian
 from findpeaks import findpeaks
 
 from diag import DiagCool
@@ -24,16 +25,33 @@ def debug_pd(sig, diagonal, lookahead=50, **kwargs):
     return peaks, props
 
 def preprocess_signal(sig: np.ndarray, method: str = None, **kwargs) -> np.ndarray:
-    """Optional preprocessing of 1D signal."""
+    """Optional preprocessing of 1D signal.
+    
+    Only accepts denoising-related kwargs - pass via 'denoise_kwargs' from peakfinder. Interpolation is handled by findpeaks.
+    """
     if method is None:
         return sig
-    elif method == "savgol":
-        # kwargs: window_length, polyorder
-        return findpeaks.savgol_filter(sig, **kwargs)
+    
+    # NaN handling
+    arr = np.array(sig, dtype=float).copy()
+    if np.isnan(arr).any():
+        fill = np.nanmedian(arr)
+        arr = np.where(np.isnan(arr), fill, arr)
+    
+    elif method == 'savgol':
+        # expected kwargs: window_length, polyorder
+        win = int(kwargs.get('window_length', 11))
+        if win % 2 == 0:
+            win += 1
+            print(f"Warning: 'window_length' must be odd for Savitzky-Golay, increased to {win}.")
+        poly = int(kwargs.get("polyorder", 3))
+        if poly >= win:
+            raise ValueError('Savgol: polyorder must be less than window_length')
+        return savgol_filter(arr, window_length=win, polyorder=poly, mode='interp')
     elif method == "gaussian":
-        # kwargs: window, std
-        window = findpeaks.gaussian(kwargs.get("window", 11), kwargs.get("std", 2))
-        return findpeaks.convolve(sig, window / window.sum(), mode="same")
+        # expected kwargs: std, avoids explicit window
+        std = float(kwargs.get("std", 2.0))
+        return gaussian(arr, sigma=std, mode="reflect")
     else:
         raise ValueError(f"Unknown method: {method} is not a valid method for 1D denoising.")
 
@@ -102,7 +120,7 @@ def peakfinder(df: pandas.DataFrame,*, method: str = 'peakdetect', denoise: str 
         sig = np.array(row, dtype = float)
         # peaks_idx, props = debug_pd(sig, diagonal=d, lookahead=50)
 
-        sig = preprocess_signal(sig, method=denoise, **kwargs)
+        sig = preprocess_signal(sig, method=denoise, **(denoise_kwargs or {}))
 
         # for catching lack of valleys
         valley_idx, _ = find_peaks(-sig)
